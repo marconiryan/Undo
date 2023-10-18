@@ -1,29 +1,17 @@
 module main
+
 import log
-type TableType = int | string | bool
-
-struct Table {
-	name string
-mut:
-	columns map[string][]TableType
-}
-
-struct DataBase {
-	tables [] Table
-}
 
 fn main() {
-	table := Table{name: 'test', columns: {'asd' : ['1', '2', 12]}}
-	println("Table: ${table.name}")
-
-	for name,values in table.columns{
-		println("Column: $name")
-		println("Values: ${values}")
-
-		for value in values {
-			println(typeof(value))
-		}
-
-	}
+	data := '{
+		"table": {
+				"id":[1,2],
+				"A": [20,20],
+				"B": [55,30]
+  				}
+			}'
+	table_using_string := log.parse(data)
+	println(table_using_string)
+	table_using_file := log.parse_file('./meta.json')
+	println(table_using_file)
 }
-
