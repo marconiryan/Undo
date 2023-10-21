@@ -1,5 +1,6 @@
 module main
 
+import database
 import log
 
 fn main() {
@@ -10,8 +11,10 @@ fn main() {
 				"B": [55,30]
   				}
 			}'
-	table_using_string := log.parse(data)
+	table_using_string := database.parse(data)
 	println(table_using_string)
-	table_using_file := log.parse_file('./meta.json')
+	table_using_file := database.parse_file('./meta.json')
 	println(table_using_file)
+	log.parse('./file.log')
+
 }

@@ -10,7 +10,7 @@ mut:
 	table map[string][]TableType
 }
 
-struct DataBase {
+struct Database {
 	tables []Table
 }
 
