@@ -15,6 +15,13 @@ fn main() {
 	println(table_using_string)
 	table_using_file := database.parse_file('./meta.json')
 	println(table_using_file)
-	log.parse('./file.log')
+	processed_logs := log.process('./file.log')
+	aborted_logs := log.aborted_logs(processed_logs)
+	rollback_logs := log.rollback_logs(processed_logs)
 
+	for transaction in aborted_logs{
+		println("Transação ${transaction} realizou UNDO")
+	}
+
+	println(rollback_logs)
 }
