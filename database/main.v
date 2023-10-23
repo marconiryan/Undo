@@ -44,13 +44,19 @@ pub fn parse_file(path string) Table {
 }
 
 pub fn setup(path string) pg.DB{
-	data_env := os.read_file("env.json") or { panic(error)}
-	config := json.decode(pg.Config, data_env) or {panic(error)}
+	data_env := os.read_file("env.json")  or {
+		panic(err)
+	}
+	config := json.decode(pg.Config, data_env) or {
+		panic(err)
+	}
 	table := parse_file(path)
 	table_columns := table.table.keys()
 
 
-	db := pg.connect(config) or {panic(error)}
+	db := pg.connect(config) or {
+		panic(err)
+	}
 	reset(db)
 	create(db, table_columns)
 	setup_insert(db,table)
@@ -73,11 +79,10 @@ fn create(db pg.DB, columns []string){
 		}
 		create_table += "${column} text,"
 	}
-	create_table += ")"
+	create_table += ");"
 
-	query:=db.exec(create_table) or {
-		println('Error: ${err}')
-		return
+	db.exec(create_table) or {
+		panic(err)
 	}
 }
 

@@ -4,14 +4,8 @@ import database
 import log
 
 fn main() {
-	data := '{
-		"table": {
-				"id":[1,2],
-				"A": [20,20],
-				"B": [55,30]
-  				}
-			}'
-	table_using_string := database.parse(data)
+
+	// ToDo Selects, log module name, tests and optimize
 	table_using_file := database.parse_file('./meta.json')
 	processed_logs := log.process('./file.log')
 	aborted_logs := log.aborted_logs(processed_logs)
