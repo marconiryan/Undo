@@ -28,8 +28,8 @@ const (
 	end_checkpoint = 'endckpt'
 )
 
-struct LogStructure {
-mut:
+pub struct LogStructure {
+pub mut:
 	transaction_id string
 	values         []string
 	label          LogLabel
