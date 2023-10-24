@@ -13,13 +13,14 @@ fn main() {
 		return current_log.transaction_id
 	})
 
-	database.display(table_using_file)
+	database.display_old(table_using_file)
 	db :=database.setup("./meta.json")
 	mut updated := ""
 	for undo in undo_logs{
 		updated += database.undo(db, table_using_file, undo)
 	}
 
+	println('---------------------\n\n |     UNDO     |\n')
 	for transaction in aborted_logs{
 		if transaction in undo_logs_transactions{
 			println("Transação ${transaction} realizou UNDO (com alterações)")
@@ -28,6 +29,7 @@ fn main() {
 		println("Transação ${transaction} realizou UNDO (sem alterações)")
 
 	}
+	println('\n---------------------')
 	database.show_table(db, table_using_file)
 	println("Valores atualizados:")
 	println(updated)

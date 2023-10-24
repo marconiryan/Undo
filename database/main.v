@@ -127,12 +127,10 @@ pub fn undo(db pg.DB, table Table, undo_log log_undo.LogStructure) string{
 	values_to_update := undo_log.values
 	columns := table.table.keys()
 	columns_to_update := values_to_update.filter(fn [columns] (val string) bool {
-		println(val)
 		return val in columns
 	})
 
 	mut query := "update ${table_name} set "
-	println(columns)
 
 	if columns_to_update.len == 0 {
 		return ""
@@ -167,11 +165,11 @@ pub fn undo(db pg.DB, table Table, undo_log log_undo.LogStructure) string{
 	return updated
 }
 
-pub fn display(table Table){
+pub fn display_old(table Table){
 	current_table := table.table.clone()
 	columns := current_table.keys()
 	values := current_table.values()
-	println("--------------------- \n TABLE ${table_name}\n")
+	println("--------------------- \nTABLE ${table_name} (não atualizado)\n")
 	println(columns.join("| "))
 	for value in 0..values.first().len{
 		for column in columns{
@@ -186,8 +184,10 @@ pub fn display(table Table){
 pub fn show_table(db pg.DB , table Table){
 	current_table := table.table.clone()
 	mut columns := current_table.keys()
+	println("--------------------- \nTABLE ${table_name} (atualizada)\n")
+	println("INFO: select ${columns.join(',')} from ${table_name}\n")
+	println(columns.join("| "))
 
-	println("select ${columns.join(',')} from ${table_name}")
 
 	query := db.exec("select ${columns.join(',')} from ${table_name} order by 1") or {
 		panic(err)
@@ -195,9 +195,6 @@ pub fn show_table(db pg.DB , table Table){
 	values := query.map(fn (value pg.Row) []?string {
 		return value.vals
 	})
-
-	println("--------------------- \n TABLE ${table_name}\n")
-	println(columns.join("| "))
 
 	for offset in 0..values.len{
 		for index in  0..values.first().len{

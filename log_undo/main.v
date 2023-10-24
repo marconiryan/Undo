@@ -82,7 +82,7 @@ pub fn process(path string) []LogStructure{
 				is_same_transaction := log.transaction_id == logs[find_components_transaction].transaction_id
 				is_start_checkpoint := logs[find_components_transaction].label == LogLabel.start_checkpoint
 				if is_same_transaction &&  is_start_checkpoint {
-					println("Checkpoint encontrado entre ${logs.len - find_components_transaction} - ${logs.len - log_index}")
+					println("\nINFO: Checkpoint encontrado entre ${logs.len - find_components_transaction} - ${logs.len - log_index}\n")
 					logs = logs[..find_components_transaction]
 					break
 				}
@@ -131,18 +131,19 @@ pub fn parse_and_classify(path string) [] LogStructure {
 }
 
 pub fn classify(parsed_log []string) LogStructure {
+	special_label := parsed_log[0].to_lower()
 	is_special_label := parsed_log.len == 1
+	last_index_start_checkpoint := special_label.last_index(start_checkpoint)
 	mut log := LogStructure{
 		status: .unprocessed
 	}
-	if !is_special_label {
+	if !is_special_label && last_index_start_checkpoint == none{
 		log.label = LogLabel.change
 		log.transaction_id = parsed_log[0].to_lower()
 		log.values = parsed_log[1..parsed_log.len]
 		return log
 	}
 
-	special_label := parsed_log[0].to_lower()
 	mut find_transaction_id_regex := regex.regex_opt(r'[A-Za-z]\d') or {
 		panic(err)
 	}
@@ -164,7 +165,7 @@ pub fn classify(parsed_log []string) LogStructure {
 	last_index_start_transaction := special_label.last_index(start_transaction)
 	is_start_transaction := last_index_start_transaction != none && special_label.len - last_index_start_transaction >= 3
 
-	last_index_start_checkpoint := special_label.last_index(start_checkpoint)
+
 	is_start_checkpoint := last_index_start_checkpoint != none && special_label.len - last_index_start_checkpoint >= 3
 	if is_start_checkpoint && transaction_id.len > 0{
 		log.values = transaction_id_match
