@@ -9,7 +9,8 @@ enum LogStatus {
 	processed
 	aborted
 	ignored
-	rollback
+	undo
+	done
 }
 
 [flag]
@@ -36,9 +37,9 @@ pub mut:
 	status         LogStatus
 }
 
-pub fn rollback_logs(invalid_logs []LogStructure) []LogStructure{
+pub fn undo_logs(invalid_logs []LogStructure) []LogStructure{
 	return invalid_logs.filter(fn (log LogStructure) bool {
-		return log.status == LogStatus.rollback
+		return log.status == LogStatus.undo
 	})
 }
 
@@ -60,8 +61,8 @@ pub fn process(path string) []LogStructure{
 		if log.status == LogStatus.processed {
 			continue;
 		}
-
-		if log.label == LogLabel.commit && log_index + 1 <= logs.len{
+		has_more_logs := log_index + 1 <= logs.len
+		if log.label == LogLabel.commit && has_more_logs{
 			for find_components_transaction in  log_index..logs.len{
 				is_same_transaction := log.transaction_id == logs[find_components_transaction].transaction_id
 				is_start_transaction := logs[find_components_transaction].label == LogLabel.start_transaction
@@ -74,7 +75,21 @@ pub fn process(path string) []LogStructure{
 				}
 			}
 		}
+
+		if log.label == LogLabel.end_checkpoint && has_more_logs {
+			logs[log_index].status = LogStatus.processed
+			for find_components_transaction in  log_index..logs.len{
+				is_same_transaction := log.transaction_id == logs[find_components_transaction].transaction_id
+				is_start_checkpoint := logs[find_components_transaction].label == LogLabel.start_checkpoint
+				if is_same_transaction &&  is_start_checkpoint {
+					println("Checkpoint encontrado entre ${logs.len - find_components_transaction} - ${logs.len - log_index}")
+					logs = logs[..find_components_transaction]
+					break
+				}
+			}
+		}
 	}
+
 	unprocessed_logs := logs.filter(fn (it LogStructure) bool {
 		return it.status == LogStatus.unprocessed
 	})
@@ -83,7 +98,7 @@ pub fn process(path string) []LogStructure{
 		mut new_log := log
 
 		if log.label == LogLabel.change {
-			new_log.status = LogStatus.rollback
+			new_log.status = LogStatus.undo
 			return new_log
 		}
 

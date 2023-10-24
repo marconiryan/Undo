@@ -119,7 +119,7 @@ fn setup_insert(db pg.DB,table Table){
 	db.exec(query) or {return}
 }
 
-pub fn rollback(db pg.DB, table Table, rollback_log log.LogStructure){
+pub fn undo(db pg.DB, table Table, rollback_log log.LogStructure){
 	values_to_update := rollback_log.values
 	columns := table.table.keys()
 	columns_to_update := values_to_update.filter(fn [columns] (val string) bool {
@@ -127,12 +127,17 @@ pub fn rollback(db pg.DB, table Table, rollback_log log.LogStructure){
 	})
 
 	mut query := "update ${table_name} set "
-	has_id := values_to_update.len % 2 != 0
-	for column in columns_to_update{
+
+	for index,column in columns_to_update {
 		query += "${column} = '${values_to_update[columns.index(column)]}'"
-		if has_id{
-			query += " where id = '${values_to_update.first()}'"
+		if index > 0{
+			query += " , "
 		}
 	}
+	has_id := values_to_update.len % 2 != 0 && values_to_update.first() !in columns_to_update
+	if has_id {
+		query += " where id = ${values_to_update.first()}"
+	}
+
 	db.exec(query) or {return }
 }
