@@ -1,4 +1,4 @@
-module log
+module log_undo
 
 import os
 import regex
@@ -116,7 +116,9 @@ pub fn process(path string) []LogStructure{
 
 pub fn parse_and_classify(path string) [] LogStructure {
 	file_content := os.read_file(path) or { return []LogStructure{} }
-	mut regex_find_log := regex.regex_opt('<[^>]*>') or { return []LogStructure{} }
+	mut regex_find_log := regex.regex_opt('<[^>]*>') or {
+		panic(err)
+	}
 	find_all_str := regex_find_log.find_all_str(file_content)
 	mut classified_log := []LogStructure{}
 	for all_str in find_all_str {
@@ -141,7 +143,9 @@ pub fn classify(parsed_log []string) LogStructure {
 	}
 
 	special_label := parsed_log[0].to_lower()
-	mut find_transaction_id_regex := regex.regex_opt(r'[A-Za-z]\d') or { return LogStructure{status: .ignored} }
+	mut find_transaction_id_regex := regex.regex_opt(r'[A-Za-z]\d') or {
+		panic(err)
+	}
 	transaction_id_match := find_transaction_id_regex.find_all_str(special_label)
 	mut transaction_id := ''
 

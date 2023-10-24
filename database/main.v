@@ -3,7 +3,7 @@ module database
 import json
 import os
 import db.pg
-import log
+import log_undo
 
 pub type TableType = bool | int | string
 const (
@@ -64,7 +64,9 @@ pub fn setup(path string) pg.DB{
 }
 
 fn reset(db pg.DB){
-	db.exec('DROP TABLE IF EXISTS ${table_name}') or {return}
+	db.exec('DROP TABLE IF EXISTS ${table_name}') or {
+		panic(err)
+	}
 }
 fn create(db pg.DB, columns []string){
 	if columns.len <= 0{
@@ -116,11 +118,13 @@ fn setup_insert(db pg.DB,table Table){
 		}
 		query += "), "
 	}
-	db.exec(query) or {return}
+	db.exec(query) or {
+		panic(err)
+	}
 }
 
-pub fn undo(db pg.DB, table Table, rollback_log log.LogStructure){
-	values_to_update := rollback_log.values
+pub fn undo(db pg.DB, table Table, undo_log log_undo.LogStructure) string{
+	values_to_update := undo_log.values
 	columns := table.table.keys()
 	columns_to_update := values_to_update.filter(fn [columns] (val string) bool {
 		return val in columns
@@ -136,8 +140,70 @@ pub fn undo(db pg.DB, table Table, rollback_log log.LogStructure){
 	}
 	has_id := values_to_update.len % 2 != 0 && values_to_update.first() !in columns_to_update
 	if has_id {
-		query += " where id = ${values_to_update.first()}"
+		query += " where id = '${values_to_update.first()}'"
 	}
 
-	db.exec(query) or {return }
+	println("--------------------- \nUNDO transação ${undo_log.transaction_id} \n")
+	println("Realizando undo com ${query}")
+	println("\n---------------------")
+	db.exec(query) or {
+		panic(err)
+	}
+	mut updated := ""
+
+	for index,column in columns_to_update {
+		updated += "${column} = '${values_to_update[columns.index(column)]}'"
+		if index > 0{
+			updated += " , "
+		}
+	}
+	updated += "\n"
+	return updated
+}
+
+pub fn display(table Table){
+	current_table := table.table.clone()
+	columns := current_table.keys()
+	values := current_table.values()
+	println("--------------------- \n TABLE ${table_name}\n")
+	println(columns.join("| "))
+	for value in 0..values.first().len{
+		for column in columns{
+			current_value := table_type_to_string(current_table[column][value])
+			print("${current_value}| ")
+		}
+		println("")
+	}
+	println("\n---------------------")
+}
+
+pub fn show_table(db pg.DB , table Table){
+	current_table := table.table.clone()
+	mut columns := current_table.keys()
+
+	println("select ${columns.join(',')} from ${table_name}")
+
+	query := db.exec("select ${columns.join(',')} from ${table_name} order by 1") or {
+		panic(err)
+	}
+	values := query.map(fn (value pg.Row) []?string {
+		return value.vals
+	})
+
+	println("--------------------- \n TABLE ${table_name}\n")
+	println(columns.join("| "))
+
+	for offset in 0..values.len{
+		for index in  0..values.first().len{
+			current_value := convert_to_string(values[offset][index])
+			print("${current_value.str()}| ")
+		}
+		println("")
+	}
+	println("\n---------------------")
+
+}
+
+fn convert_to_string(a ?string) string{
+	return a.str()
 }

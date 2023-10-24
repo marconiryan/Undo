@@ -1,22 +1,35 @@
 module main
 
 import database
-import log
+import log_undo
 
 fn main() {
 
-	// ToDo Selects, log module name, tests and optimize
 	table_using_file := database.parse_file('./meta.json')
-	processed_logs := log.process('./file.log')
-	aborted_logs := log.aborted_logs(processed_logs)
-	undo_logs := log.undo_logs(processed_logs)
+	processed_logs := log_undo.process('./file.log')
+	aborted_logs := log_undo.aborted_logs(processed_logs)
+	undo_logs := log_undo.undo_logs(processed_logs)
+	undo_logs_transactions := undo_logs.map(fn (current_log log_undo.LogStructure) string {
+		return current_log.transaction_id
+	})
+
+	database.display(table_using_file)
+	db :=database.setup("./meta.json")
+	mut updated := ""
+	for undo in undo_logs{
+		updated += database.undo(db, table_using_file, undo)
+	}
 
 	for transaction in aborted_logs{
-		println("Transação ${transaction} realizou UNDO")
-	}
+		if transaction in undo_logs_transactions{
+			println("Transação ${transaction} realizou UNDO (com alterações)")
+			continue
+		}
+		println("Transação ${transaction} realizou UNDO (sem alterações)")
 
-	db :=database.setup("./meta.json")
-	for undo in undo_logs{
-		database.undo(db, table_using_file, undo)
 	}
+	database.show_table(db, table_using_file)
+	println("Valores atualizados:")
+	println(updated)
+	println("---------------------")
 }
