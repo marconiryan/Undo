@@ -83,7 +83,7 @@ pub fn process(path string) []LogStructure{
 				is_start_checkpoint := logs[find_components_transaction].label == LogLabel.start_checkpoint
 				if is_same_transaction &&  is_start_checkpoint {
 					println("\nINFO: Checkpoint encontrado entre ${logs.len - find_components_transaction} - ${logs.len - log_index}\n")
-					logs = logs[..find_components_transaction]
+					logs = unsafe {  logs[..find_components_transaction] }
 					break
 				}
 			}
