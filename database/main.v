@@ -127,13 +127,19 @@ pub fn undo(db pg.DB, table Table, undo_log log_undo.LogStructure) string{
 	values_to_update := undo_log.values
 	columns := table.table.keys()
 	columns_to_update := values_to_update.filter(fn [columns] (val string) bool {
+		println(val)
 		return val in columns
 	})
 
 	mut query := "update ${table_name} set "
+	println(columns)
+
+	if columns_to_update.len == 0 {
+		return ""
+	}
 
 	for index,column in columns_to_update {
-		query += "${column} = '${values_to_update[columns.index(column)]}'"
+		query += "${column} = '${values_to_update[values_to_update.index(column) + 1]}'"
 		if index > 0{
 			query += " , "
 		}
@@ -152,7 +158,7 @@ pub fn undo(db pg.DB, table Table, undo_log log_undo.LogStructure) string{
 	mut updated := ""
 
 	for index,column in columns_to_update {
-		updated += "${column} = '${values_to_update[columns.index(column)]}'"
+		updated += "${column} = '${values_to_update[values_to_update.index(column) + 1]}'"
 		if index > 0{
 			updated += " , "
 		}
